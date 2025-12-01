@@ -1,0 +1,108 @@
+/* public/style.css */
+
+:root {
+    /* Default Theme: Hacker Green */
+    --bg-color: #0d1117;
+    --text-color: #00ff41;
+    --prompt-color: #008f11;
+    --font-stack: 'Courier New', Courier, monospace;
+}
+
+/* Theme Classes */
+body.amber-theme {
+    --text-color: #ffb000;
+    --prompt-color: #cc8800;
+}
+
+body.white-theme {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --prompt-color: #000000;
+}
+
+/* --- SECRET MATRIX MODE --- */
+body.matrix-mode {
+    --bg-color: #000000;
+    --text-color: #0f0; /* Bright Neon Green */
+    --prompt-color: #0f0;
+    text-shadow: 0 0 5px #0f0; /* Glowing Text */
+    animation: flicker 0.15s infinite; /* Slight screen flicker */
+}
+
+/* Animation for Matrix Mode */
+@keyframes flicker {
+    0% { opacity: 0.97; }
+    50% { opacity: 1; }
+    100% { opacity: 0.98; }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-stack);
+    margin: 0;
+    padding: 20px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s, color 0.3s; /* Smooth transitions */
+}
+
+.terminal-window {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+    padding-right: 10px;
+}
+
+/* Scrollbar Styling */
+#messages::-webkit-scrollbar { width: 8px; }
+#messages::-webkit-scrollbar-thumb { background: var(--text-color); border-radius: 4px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
+
+.message-line { margin: 2px 0; line-height: 1.5; }
+.system-msg { opacity: 0.6; font-style: italic; }
+
+.input-line {
+    display: flex;
+    align-items: center;
+    border-top: 1px dashed var(--text-color);
+    padding-top: 10px;
+}
+
+.prompt {
+    margin-right: 10px;
+    color: var(--prompt-color);
+    font-weight: bold;
+}
+
+#chat-form { width: 100%; }
+
+input {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-family: var(--font-stack);
+    font-size: 16px;
+    width: 100%;
+    outline: none;
+}
+
+/* Emoji Styling */
+.emoji {
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
+    font-style: normal;
+}
