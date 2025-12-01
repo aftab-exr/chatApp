@@ -33,5 +33,5 @@ Type `/commands` in the chat to see this list:
 
 1. **Clone the repo**
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/terminal-chat.git](https://github.com/YOUR_USERNAME/terminal-chat.git)
-   cd terminal-chat
+   git clone [https://github.com/aftab-exr/chatApp.git](https://github.com/aftab-exr/chatApp.git)
+   cd chatApp
