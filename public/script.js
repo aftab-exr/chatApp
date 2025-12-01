@@ -23,13 +23,16 @@ let currentUser = '';
 let typingTimeout;
 
 // --- 2. FONTS ARRAY (0-5) ---
+// Expanded Font List
 const fonts = [
     "'Courier New', Courier, monospace", // 0: Default
-    "'VT323', monospace",                // 1: Retro Terminal
-    "'Fira Code', monospace",            // 2: Developer
-    "'Press Start 2P', cursive",         // 3: 8-Bit Game
+    "'VT323', monospace",                // 1: Retro
+    "'Fira Code', monospace",            // 2: Dev
+    "'Press Start 2P', cursive",         // 3: Arcade
     "'Source Code Pro', monospace",      // 4: Clean
-    "'Roboto Mono', monospace"           // 5: Modern
+    "'Roboto Mono', monospace",          // 5: Modern
+    "'Orbitron', sans-serif",            // 6: Sci-Fi (New)
+    "'Share Tech Mono', monospace"       // 7: Hacker (New)
 ];
 
 // --- 3. EXPANDED EMOJI MAP ---
@@ -118,98 +121,83 @@ chatForm.addEventListener('submit', function (e) {
 function handleCommand(cmd) {
     const parts = cmd.split(' ');
     const command = parts[0].toLowerCase();
+    const arg = parts[1];
 
-    // /bg https://example.com/image.jpg
-    if (command === '/bg') {
+    // --- LIST ALL COMMANDS ---
+    if (command === '/commands' || command === '/help') {
+        addMessageToScreen('System', '--- AVAILABLE COMMANDS ---', true);
+        addMessageToScreen('System', '/theme [green|amber|white|matrix] - Change Colors', true);
+        addMessageToScreen('System', '/font [0-7] - Change Font Style', true);
+        addMessageToScreen('System', '/bg [url] - Set Background Image', true);
+        addMessageToScreen('System', '/color [hex_text] [hex_bg] - Custom Colors', true);
+        addMessageToScreen('System', '/clear - Clear Screen', true);
+        addMessageToScreen('System', '/reset - Reset UI to Default', true);
+        addMessageToScreen('System', '/nuke [password] - Factory Reset Server', true);
+        return; // Stop here
+    }
+
+    if (command === '/clear') {
+        messagesDiv.innerHTML = '';
+        addMessageToScreen('System', 'Console cleared.', true);
+    }
+    // --- THEMES ---
+    else if (command === '/theme') {
+        body.style = ''; // CLEAR inline styles (fixes matrix bug)
+        body.className = ''; // CLEAR existing classes
+
+        if (arg === 'amber') body.classList.add('amber-theme');
+        else if (arg === 'white') body.classList.add('white-theme');
+        else if (arg === 'matrix') body.classList.add('matrix-mode');
+
+        addMessageToScreen('System', `Theme set to: ${arg || 'default'}`, true);
+    }
+    // --- FONTS ---
+    else if (command === '/font') {
+        const index = parseInt(parts[1]);
+        if (index >= 0 && index < fonts.length) {
+            document.documentElement.style.setProperty('--font-stack', fonts[index]);
+            addMessageToScreen('System', `Font set to ID ${index}`, true);
+        } else {
+            addMessageToScreen('System', `Available Fonts: 0-${fonts.length - 1}`, true);
+        }
+    }
+    // --- CUSTOM BG ---
+    else if (command === '/bg') {
         const url = parts[1];
         if (url) {
             body.style.backgroundImage = `url(${url})`;
             body.style.backgroundSize = 'cover';
             body.style.backgroundPosition = 'center';
-            addMessageToScreen('System', 'Custom Background Set.', true);
+            addMessageToScreen('System', 'Background updated.', true);
         }
     }
-    // /font 0-5
-    else if (command === '/font') {
-        const index = parseInt(parts[1]);
-        if (index >= 0 && index < fonts.length) {
-            document.documentElement.style.setProperty('--font-stack', fonts[index]);
-            addMessageToScreen('System', `Font changed to Style ${index}.`, true);
-        } else {
-            addMessageToScreen('System', `Available Fonts: 0-${fonts.length - 1}`, true);
-        }
-    }
-    // /color #text #bg
+    // --- CUSTOM COLORS ---
     else if (command === '/color') {
-        const textColor = parts[1];
-        const bgColor = parts[2];
-        if (textColor && bgColor) {
-            document.documentElement.style.setProperty('--text-color', textColor);
-            document.documentElement.style.setProperty('--bg-color', bgColor);
-            document.documentElement.style.setProperty('--prompt-color', textColor); // Match prompt to text
-            addMessageToScreen('System', `Custom Colors Applied: ${textColor} on ${bgColor}`, true);
-        } else {
-            addMessageToScreen('System', 'Usage: /color #00ff00 #000000', true);
+        const tColor = parts[1];
+        const bColor = parts[2];
+        if (tColor && bColor) {
+            document.documentElement.style.setProperty('--text-color', tColor);
+            document.documentElement.style.setProperty('--bg-color', bColor);
+            document.documentElement.style.setProperty('--prompt-color', tColor);
+            addMessageToScreen('System', 'Custom colors applied.', true);
         }
     }
-    // /theme (Preset)
-    else if (command === '/theme') {
-        body.style.backgroundImage = 'none'; // Reset BG image
-        body.className = '';
-        const arg = parts[1];
-
-        if (arg === 'amber') body.classList.add('amber-theme');
-        else if (arg === 'white') body.classList.add('white-theme');
-        else if (arg === 'matrix') body.classList.add('matrix-mode');
-        else body.className = '';
-
-        addMessageToScreen('System', `Theme switched to: ${arg || 'default'}`, true);
-    }
-    else if (command === '/clear') {
-        messagesDiv.innerHTML = '';
-        addMessageToScreen('System', 'Console cleared.', true);
-    }
-
-    // 1. SOFT RESET (Visual Only)
+    // --- RESET ---
     else if (command === '/reset') {
-        // Remove all inline styles (Custom colors/backgrounds)
-        document.documentElement.style = '';
         body.style = '';
-
-        // Remove all theme classes
         body.className = '';
-
-        // Reset Font
-        document.documentElement.style.removeProperty('--font-stack');
-
-        addMessageToScreen('System', 'Interface reset to factory defaults.', true);
+        document.documentElement.style = '';
+        addMessageToScreen('System', 'UI Reset to Factory Default.', true);
     }
-
-    // 2. ABSOLUTE RESET (Server Wipe)
+    // --- NUKE ---
     else if (command === '/nuke') {
-        const password = parts[1];
-        if (!password) {
-            addMessageToScreen('System', '⚠️ WARNING: This will delete ALL users and messages.', true);
-            addMessageToScreen('System', 'Usage: /nuke [admin_password]', true);
-        } else {
-            socket.emit('factory reset', password);
-        }
+        if (parts[1]) socket.emit('factory reset', parts[1]);
+        else addMessageToScreen('System', 'Usage: /nuke [password]', true);
     }
-
-    else if (command === '/help') {
-        addMessageToScreen('System', '--- COMMAND LIST ---', true);
-        addMessageToScreen('System', '/bg [image_url] - Set background image', true);
-        addMessageToScreen('System', '/font [0-5] - Change Font Style', true);
-        addMessageToScreen('System', '/color [hex_text] [hex_bg] - Custom Colors', true);
-        addMessageToScreen('System', '/theme [green|amber|white|matrix]', true);
-        addMessageToScreen('System', '/clear - Clear screen', true);
-    }
-
     else {
         addMessageToScreen('System', `Unknown command: ${command}`, true);
     }
 }
-
 // --- 7. LISTENERS ---
 socket.on('chat message', (data) => addMessageToScreen(data.user, data.text));
 socket.on('message', (data) => addMessageToScreen('System', data.text, true));

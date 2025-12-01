@@ -1,39 +1,28 @@
 /* public/style.css */
 
 :root {
-    /* Default Theme: Hacker Green */
     --bg-color: #0d1117;
     --text-color: #00ff41;
     --prompt-color: #008f11;
     --font-stack: 'Courier New', Courier, monospace;
 }
 
-/* Theme Classes */
-body.amber-theme {
-    --text-color: #ffb000;
-    --prompt-color: #cc8800;
-}
+/* --- THEMES --- */
+body.amber-theme { --text-color: #ffb000; --prompt-color: #cc8800; }
+body.white-theme { --bg-color: #ffffff; --text-color: #333333; --prompt-color: #000000; }
 
-body.white-theme {
-    --bg-color: #ffffff;
-    --text-color: #333333;
-    --prompt-color: #000000;
-}
-
-/* --- SECRET MATRIX MODE --- */
+/* --- MATRIX MODE (FIXED) --- */
 body.matrix-mode {
     --bg-color: #000000;
-    --text-color: #0f0; /* Bright Neon Green */
+    --text-color: #0f0;
     --prompt-color: #0f0;
-    text-shadow: 0 0 5px #0f0; /* Glowing Text */
-    animation: flicker 0.15s infinite; /* Slight screen flicker */
+    text-shadow: 0 0 5px #0f0;
+    font-family: 'Share Tech Mono', monospace !important; /* Force Hacker Font */
+    animation: flicker 0.15s infinite;
 }
 
-/* Animation for Matrix Mode */
 @keyframes flicker {
-    0% { opacity: 0.97; }
-    50% { opacity: 1; }
-    100% { opacity: 0.98; }
+    0% { opacity: 0.97; } 50% { opacity: 1; } 100% { opacity: 0.98; }
 }
 
 * { box-sizing: border-box; }
@@ -43,12 +32,13 @@ body {
     color: var(--text-color);
     font-family: var(--font-stack);
     margin: 0;
-    padding: 20px;
-    height: 100vh;
+    padding: 10px; /* Less padding for mobile */
+    height: 100dvh; /* Dynamic Height for Mobile Browsers */
+    width: 100vw;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: background-color 0.3s, color 0.3s; /* Smooth transitions */
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .terminal-window {
@@ -60,33 +50,46 @@ body {
     flex-direction: column;
 }
 
+/* Messages Area */
 #messages {
     flex-grow: 1;
     overflow-y: auto;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     white-space: pre-wrap;
-    padding-right: 10px;
+    word-wrap: break-word; /* Prevent long words breaking layout */
 }
 
-/* Scrollbar Styling */
-#messages::-webkit-scrollbar { width: 8px; }
+/* Scrollbar */
+#messages::-webkit-scrollbar { width: 5px; }
 #messages::-webkit-scrollbar-thumb { background: var(--text-color); border-radius: 4px; }
-#messages::-webkit-scrollbar-track { background: transparent; }
 
-.message-line { margin: 2px 0; line-height: 1.5; }
+.message-line { margin: 4px 0; line-height: 1.4; font-size: 1rem; }
 .system-msg { opacity: 0.6; font-style: italic; }
 
+/* Status Bar */
+#status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    opacity: 0.7;
+    font-size: 0.75rem;
+    border-top: 1px dashed var(--text-color);
+}
+
+/* Input Area */
 .input-line {
     display: flex;
     align-items: center;
     border-top: 1px dashed var(--text-color);
     padding-top: 10px;
+    padding-bottom: 10px; /* Extra space for mobile touch */
 }
 
 .prompt {
-    margin-right: 10px;
+    margin-right: 8px;
     color: var(--prompt-color);
     font-weight: bold;
+    white-space: nowrap; /* Keep prompt on one line */
 }
 
 #chat-form { width: 100%; }
@@ -96,13 +99,14 @@ input {
     border: none;
     color: var(--text-color);
     font-family: var(--font-stack);
-    font-size: 16px;
+    font-size: 16px; /* Prevents iOS Zoom on focus */
     width: 100%;
     outline: none;
 }
 
-/* Emoji Styling */
-.emoji {
-    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
-    font-style: normal;
+/* --- MOBILE OPTIMIZATIONS --- */
+@media (max-width: 600px) {
+    body { padding: 5px; }
+    .message-line { font-size: 0.9rem; }
+    .prompt { font-size: 0.8rem; }
 }
