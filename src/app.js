@@ -3,7 +3,7 @@ require('dotenv').config(); // Load settings
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const authRoutes = require('./routes/authRoutes');
+const authRoutes = require('./routes/authroutes');
 const socketHandler = require('./sockets/chatSocket'); // We will create this next
 
 const app = express();
