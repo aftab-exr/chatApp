@@ -1,23 +1,29 @@
 // src/app.js
-require('dotenv').config(); // Load settings
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const authRoutes = require('./routes/authroutes');
-const socketHandler = require('./sockets/chatSocket'); // We will create this next
+const connectDB = require('./config/db'); // Import DB
+const authRoutes = require('./routes/userRoutes'); // Ensure casing matches file!
+const socketHandler = require('./sockets/chatSocket');
 
 const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server);
+const io = new Server(server, {
+    cors: { origin: "*" } // Allow connections from Mobile Apps
+});
 
-// Middleware (Settings)
+// Connect to Database
+connectDB();
+
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
-app.use(express.json());
+
+// Routes
 app.use('/api/auth', authRoutes);
 
-// Initialize Socket Logic
+// Socket Logic
 socketHandler(io);
 
 const PORT = process.env.PORT || 3000;

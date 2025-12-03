@@ -1,8 +1,10 @@
-// public/script.js
+// public/script.js - PRODUCTION VERSION
 
-// --- 1. SETUP ---
-const socket = io({ autoConnect: false });
+// 1. SETUP
+// const socket = io("https://your-app.onrender.com", { autoConnect: false }); // Use for Mobile
+const socket = io({ autoConnect: false }); // Use for Web/Localhost
 
+// DOM Elements
 const loginOverlay = document.getElementById('login-overlay');
 const loginMsg = document.getElementById('login-msg');
 const usernameInput = document.getElementById('u-name');
@@ -14,46 +16,15 @@ const mainInterface = document.getElementById('main-interface');
 const messagesDiv = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
 const inputField = document.getElementById('m');
-const body = document.body;
 const promptSpan = document.querySelector('.prompt');
-const typingIndicator = document.getElementById('typing-indicator');
 const onlineCount = document.getElementById('online-count');
+const typingIndicator = document.getElementById('typing-indicator');
 
 let currentUser = '';
+let currentRoom = 'global';
 let typingTimeout;
 
-// --- 2. FONTS ARRAY (0-5) ---
-// Expanded Font List
-const fonts = [
-    "'Courier New', Courier, monospace", // 0: Default
-    "'VT323', monospace",                // 1: Retro
-    "'Fira Code', monospace",            // 2: Dev
-    "'Press Start 2P', cursive",         // 3: Arcade
-    "'Source Code Pro', monospace",      // 4: Clean
-    "'Roboto Mono', monospace",          // 5: Modern
-    "'Orbitron', sans-serif",            // 6: Sci-Fi (New)
-    "'Share Tech Mono', monospace"       // 7: Hacker (New)
-];
-
-// --- 3. EXPANDED EMOJI MAP ---
-const emojiMap = {
-    // Faces
-    ':smile:': '😊', ':laugh:': '😂', ':cool:': '😎', ':wink:': '😉',
-    ':cry:': '😭', ':love:': '😍', ':hmm:': '🤔', ':scared:': '😱',
-    ':clown:': '🤡', ':devil:': '😈', ':ghost:': '👻', ':alien:': '👽',
-    ':robot:': '🤖', ':poop:': '💩', ':skull:': '💀',
-    // Hands
-    ':thumbsup:': '👍', ':thumbsdown:': '👎', ':wave:': '👋', ':pray:': '🙏',
-    ':muscle:': '💪', ':clap:': '👏',
-    // Objects/Nature
-    ':fire:': '🔥', ':rocket:': '🚀', ':heart:': '❤️', ':star:': '⭐',
-    ':bomb:': '💣', ':check:': '✅', ':x:': '❌', ':warning:': '⚠️',
-    ':money:': '💸', ':lock:': '🔒', ':key:': '🔑', ':coffee:': '☕',
-    ':beer:': '🍺', ':pizza:': '🍕', ':game:': '🎮', ':cat:': '🐱',
-    ':dog:': '🐶', ':dragon:': '🐉', ':party:': '🎉'
-};
-
-// --- 4. AUTHENTICATION ---
+// 2. AUTHENTICATION
 async function authUser(endpoint) {
     const username = usernameInput.value.trim();
     const password = passwordInput.value.trim();
@@ -71,7 +42,7 @@ async function authUser(endpoint) {
         if (data.success) {
             if (endpoint === 'register') {
                 loginMsg.style.color = 'lime';
-                loginMsg.innerText = 'Success. Please Login.';
+                loginMsg.innerText = 'Registration Successful. Please Login.';
             } else {
                 currentUser = data.username;
                 startChat();
@@ -83,8 +54,8 @@ async function authUser(endpoint) {
     } catch (err) { loginMsg.innerText = "Connection Error."; }
 }
 
-if (btnLogin) btnLogin.addEventListener('click', () => authUser('login'));
-if (btnRegister) btnRegister.addEventListener('click', () => authUser('register'));
+if(btnLogin) btnLogin.addEventListener('click', () => authUser('login'));
+if(btnRegister) btnRegister.addEventListener('click', () => authUser('register'));
 
 function startChat() {
     loginOverlay.style.display = 'none';
@@ -94,16 +65,55 @@ function startChat() {
     inputField.focus();
 }
 
-// --- 5. PARSER LOGIC ---
-function parseEmojis(text) {
-    let newText = text;
-    for (const [key, value] of Object.entries(emojiMap)) {
-        newText = newText.split(key).join(`<span class="emoji">${value}</span>`);
+// 3. ROOM & SIDEBAR LOGIC
+function joinRoom(roomName) {
+    if (currentRoom === roomName) return;
+
+    // Add to sidebar if it doesn't exist
+    addRoomToSidebar(roomName);
+
+    // Update UI
+    document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
+    const btn = document.getElementById(`btn-${roomName}`);
+    if (btn) {
+        btn.classList.add('active');
+        btn.style.color = ''; // Remove notification color
+        btn.style.fontWeight = '';
     }
-    return newText;
+
+    // Clear Screen & Switch
+    messagesDiv.innerHTML = '';
+    addMessageToScreen('System', `--- Switched to ${roomName} ---`, true);
+    
+    socket.emit('join room', roomName);
+    currentRoom = roomName;
 }
 
-chatForm.addEventListener('submit', function (e) {
+function addRoomToSidebar(roomName) {
+    if (document.getElementById(`btn-${roomName}`)) return;
+
+    const div = document.createElement('div');
+    div.id = `btn-${roomName}`;
+    div.classList.add('room-item');
+    div.onclick = () => joinRoom(roomName);
+
+    if (roomName.includes('_')) {
+        // DM Formatting: Show the OTHER person's name
+        const displayName = roomName.replace(currentUser, '').replace('_', '');
+        div.innerText = `@ ${displayName}`;
+        
+        // Add to DM list (if you have a container for it, otherwise main list)
+        const dmList = document.getElementById('dm-list') || document.getElementById('room-list');
+        dmList.appendChild(div);
+    } else {
+        // Channel Formatting
+        div.innerText = `# ${roomName}`;
+        document.getElementById('room-list').appendChild(div);
+    }
+}
+
+// 4. MESSAGING
+chatForm.addEventListener('submit', function(e) {
     e.preventDefault();
     let msg = inputField.value.trim();
     if (!msg) return;
@@ -111,119 +121,70 @@ chatForm.addEventListener('submit', function (e) {
     if (msg.startsWith('/')) {
         handleCommand(msg);
     } else {
-        msg = parseEmojis(msg);
         socket.emit('chat message', { user: currentUser, text: msg });
     }
     inputField.value = '';
 });
 
-// --- 6. ADVANCED COMMANDS ---
 function handleCommand(cmd) {
     const parts = cmd.split(' ');
     const command = parts[0].toLowerCase();
-    const arg = parts[1];
-
-    // --- LIST ALL COMMANDS ---
-    if (command === '/commands' || command === '/help') {
-        addMessageToScreen('System', '--- AVAILABLE COMMANDS ---', true);
-        addMessageToScreen('System', '/theme [green|amber|white|matrix] - Change Colors', true);
-        addMessageToScreen('System', '/font [0-7] - Change Font Style', true);
-        addMessageToScreen('System', '/bg [url] - Set Background Image', true);
-        addMessageToScreen('System', '/color [hex_text] [hex_bg] - Custom Colors', true);
-        addMessageToScreen('System', '/clear - Clear Screen', true);
-        addMessageToScreen('System', '/reset - Reset UI to Default', true);
-        addMessageToScreen('System', '/nuke [password] - Factory Reset Server', true);
-        return; // Stop here
+    
+    if (command === '/join' && parts[1]) joinRoom(parts[1]);
+    else if (command === '/dm' && parts[1]) {
+        // Create P2P Room ID: sort names so "A_B" is same as "B_A"
+        const p2pRoom = [currentUser, parts[1]].sort().join('_');
+        joinRoom(p2pRoom);
     }
-
-    if (command === '/clear') {
-        messagesDiv.innerHTML = '';
-        addMessageToScreen('System', 'Console cleared.', true);
-    }
-    // --- THEMES ---
-    else if (command === '/theme') {
-        body.style = ''; // CLEAR inline styles (fixes matrix bug)
-        body.className = ''; // CLEAR existing classes
-
-        if (arg === 'amber') body.classList.add('amber-theme');
-        else if (arg === 'white') body.classList.add('white-theme');
-        else if (arg === 'matrix') body.classList.add('matrix-mode');
-
-        addMessageToScreen('System', `Theme set to: ${arg || 'default'}`, true);
-    }
-    // --- FONTS ---
-    else if (command === '/font') {
-        const index = parseInt(parts[1]);
-        if (index >= 0 && index < fonts.length) {
-            document.documentElement.style.setProperty('--font-stack', fonts[index]);
-            addMessageToScreen('System', `Font set to ID ${index}`, true);
-        } else {
-            addMessageToScreen('System', `Available Fonts: 0-${fonts.length - 1}`, true);
-        }
-    }
-    // --- CUSTOM BG ---
-    else if (command === '/bg') {
-        const url = parts[1];
-        if (url) {
-            body.style.backgroundImage = `url(${url})`;
-            body.style.backgroundSize = 'cover';
-            body.style.backgroundPosition = 'center';
-            addMessageToScreen('System', 'Background updated.', true);
-        }
-    }
-    // --- CUSTOM COLORS ---
-    else if (command === '/color') {
-        const tColor = parts[1];
-        const bColor = parts[2];
-        if (tColor && bColor) {
-            document.documentElement.style.setProperty('--text-color', tColor);
-            document.documentElement.style.setProperty('--bg-color', bColor);
-            document.documentElement.style.setProperty('--prompt-color', tColor);
-            addMessageToScreen('System', 'Custom colors applied.', true);
-        }
-    }
-    // --- RESET ---
-    else if (command === '/reset') {
-        body.style = '';
-        body.className = '';
-        document.documentElement.style = '';
-        addMessageToScreen('System', 'UI Reset to Factory Default.', true);
-    }
-    // --- NUKE ---
-    else if (command === '/nuke') {
-        if (parts[1]) socket.emit('factory reset', parts[1]);
-        else addMessageToScreen('System', 'Usage: /nuke [password]', true);
-    }
-    else {
-        addMessageToScreen('System', `Unknown command: ${command}`, true);
-    }
+    else if (command === '/clear') messagesDiv.innerHTML = '';
+    else if (command === '/nuke' && parts[1]) socket.emit('factory reset', parts[1]);
+    else addMessageToScreen('System', `Unknown command: ${command}`, true);
 }
-// --- 7. LISTENERS ---
+
+// 5. SOCKET LISTENERS
 socket.on('chat message', (data) => addMessageToScreen(data.user, data.text));
 socket.on('message', (data) => addMessageToScreen('System', data.text, true));
+
 socket.on('load history', (history) => {
     messagesDiv.innerHTML = '';
-    addMessageToScreen('System', '--- History Loaded ---', true);
-    history.forEach((msg) => addMessageToScreen(msg.user, msg.text));
+    addMessageToScreen('System', `--- History: ${currentRoom} ---`, true);
+    history.forEach(msg => addMessageToScreen(msg.user, msg.text));
 });
-socket.on('user count', (c) => { if (onlineCount) onlineCount.innerText = `Nodes: ${c}`; });
-socket.on('typing', (u) => { if (typingIndicator) typingIndicator.innerText = `> ${u} typing...`; });
-socket.on('stop typing', () => { if (typingIndicator) typingIndicator.innerText = ''; });
 
+// DM Notification Listener
+socket.on('new dm', (data) => {
+    // Check if this DM involves ME
+    if (data.room.includes(currentUser)) {
+        addRoomToSidebar(data.room);
+        
+        // Visual Alert if not currently in that room
+        if (currentRoom !== data.room) {
+            const btn = document.getElementById(`btn-${data.room}`);
+            if (btn) {
+                btn.style.color = 'cyan'; // Notification color
+                btn.style.fontWeight = 'bold';
+            }
+        }
+    }
+});
+
+socket.on('user count', (c) => { if(onlineCount) onlineCount.innerText = `Nodes: ${c}`; });
+socket.on('typing', (u) => { if(typingIndicator) typingIndicator.innerText = `> ${u} is typing...`; });
+socket.on('stop typing', () => { if(typingIndicator) typingIndicator.innerText = ''; });
+
+// 6. TYPING DETECTION
 inputField.addEventListener('input', () => {
     socket.emit('typing', currentUser);
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => socket.emit('stop typing'), 1000);
 });
 
+// 7. HELPER
 function addMessageToScreen(user, text, isSystem = false) {
     const div = document.createElement('div');
     div.classList.add('message-line');
     if (isSystem) div.classList.add('system-msg');
-
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    div.innerHTML = `[${time}] <strong>${user}:</strong> ${text}`;
-
+    div.innerHTML = `<strong>${user}:</strong> ${text}`;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }

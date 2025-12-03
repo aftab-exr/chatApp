@@ -1,75 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Chat System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inconsolata&family=Orbitron&family=Press+Start+2P&family=Roboto+Mono&family=Share+Tech+Mono&family=Source+Code+Pro&family=VT323&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00ff41">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <title>Terminal Chat System</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inconsolata&family=Press+Start+2P&family=Roboto+Mono&family=Source+Code+Pro&family=VT323&display=swap"
-        rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inconsolata&family=Orbitron&family=Press+Start+2P&family=Roboto+Mono&family=Share+Tech+Mono&family=Source+Code+Pro&family=VT323&display=swap"
-        rel="stylesheet">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-    <div id="login-overlay"
-        style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:100; display:flex; justify-content:center; align-items:center; flex-direction:column;">
+    <div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:100; display:flex; justify-content:center; align-items:center; flex-direction:column;">
         <h1 style="color:var(--text-color); font-family: monospace;">TERMINAL ACCESS</h1>
         <div style="border: 1px solid var(--text-color); padding: 20px; width: 300px; font-family: monospace;">
             <p style="margin-top:0; color:var(--text-color);">// IDENTIFY YOURSELF</p>
-
-            <input id="u-name" placeholder="Username" autocomplete="off"
-                style="display:block; width:100%; background:transparent; border:none; border-bottom: 1px solid var(--text-color); color:var(--text-color); margin-bottom: 15px; padding:5px; font-family: monospace; outline:none;">
-
-            <input id="p-word" type="password" placeholder="Password"
-                style="display:block; width:100%; background:transparent; border:none; border-bottom: 1px solid var(--text-color); color:var(--text-color); margin-bottom: 20px; padding:5px; font-family: monospace; outline:none;">
-
+            <input id="u-name" placeholder="Username" autocomplete="off" style="display:block; width:100%; background:transparent; border:none; border-bottom: 1px solid var(--text-color); color:var(--text-color); margin-bottom: 15px; padding:5px; font-family: monospace; outline:none;">
+            <input id="p-word" type="password" placeholder="Password" style="display:block; width:100%; background:transparent; border:none; border-bottom: 1px solid var(--text-color); color:var(--text-color); margin-bottom: 20px; padding:5px; font-family: monospace; outline:none;">
             <div style="display:flex; justify-content:space-between;">
-                <button id="btn-login"
-                    style="background:var(--text-color); color:var(--bg-color); border:none; padding:8px 15px; cursor:pointer; font-weight:bold; font-family: monospace;">>
-                    LOGIN</button>
-                <button id="btn-register"
-                    style="background:transparent; color:var(--text-color); border:1px solid var(--text-color); padding:8px 15px; cursor:pointer; font-family: monospace;">REGISTER</button>
+                <button id="btn-login" style="background:var(--text-color); color:var(--bg-color); border:none; padding:8px 15px; cursor:pointer; font-weight:bold; font-family: monospace;">> LOGIN</button>
+                <button id="btn-register" style="background:transparent; color:var(--text-color); border:1px solid var(--text-color); padding:8px 15px; cursor:pointer; font-family: monospace;">REGISTER</button>
             </div>
-
             <div id="login-msg" style="margin-top:15px; color:red; font-size:12px; height: 15px;"></div>
         </div>
     </div>
 
-    <div class="terminal-window" id="main-interface" style="display:none;">
-        <div id="messages"></div>
-
-        <div id="status-bar"
-            style="display: flex; justify-content: space-between; padding: 5px 0; opacity: 0.7; font-size: 0.8rem; border-top: 1px dashed var(--text-color); margin-top: 10px;">
-            <span id="typing-indicator" style="min-width: 100px;"></span>
-            <span id="online-count">System: Initializing...</span>
+    <div class="terminal-window" id="main-interface" style="display:none; flex-direction: row;">
+        
+        <div id="sidebar" style="width: 200px; border-right: 1px dashed var(--text-color); padding: 10px; display: flex; flex-direction: column;">
+            <div style="font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid var(--text-color); padding-bottom: 5px;">> CHANNELS</div>
+            <div id="room-list">
+                <div class="room-item active" onclick="joinRoom('global')"># global</div>
+                <div class="room-item" onclick="joinRoom('gaming')"># gaming</div>
+                <div class="room-item" onclick="joinRoom('coding')"># coding</div>
+                <div class="room-item" onclick="joinRoom('music')"># music</div>
+            </div>
         </div>
 
-        <div class="input-line">
-            <span class="prompt">user@chat:~$</span>
-            <form id="chat-form" style="width: 100%;">
-                <input id="m" autocomplete="off" autofocus />
-            </form>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; padding-left: 10px; min-width: 0;">
+            <div id="messages"></div>
+            
+            <div id="status-bar" style="display: flex; justify-content: space-between; padding: 5px 0; opacity: 0.7; font-size: 0.8rem; border-top: 1px dashed var(--text-color); margin-top: 10px;">
+                <span id="typing-indicator" style="min-width: 100px;"></span>
+                <span id="online-count">System: Initializing...</span>
+            </div>
+
+            <div class="input-line">
+                <span class="prompt">user@chat:~$</span>
+                <form id="chat-form" style="width: 100%;">
+                    <input id="m" autocomplete="off" autofocus />
+                </form>
+            </div>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> <script src="script.js"></script>
     <script>
-        // Register Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(() => console.log('App Service Worker Registered'))
-                .catch((err) => console.log('SW Failed:', err));
+            navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW Failed:', err));
         }
     </script>
 </body>
-
 </html>
