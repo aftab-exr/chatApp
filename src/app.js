@@ -4,7 +4,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const connectDB = require('./config/db'); // Import DB
-const authRoutes = require('./routes/userRoutes'); // Ensure casing matches file!
+const authRoutes = require('./routes/userroutes'); // Ensure casing matches file!
 const socketHandler = require('./sockets/chatSocket');
 
 const app = express();
